@@ -1,0 +1,70 @@
+CREATE OR REPLACE FUNCTION biblioteca.deleteLivroExemplar()
+RETURNS TRIGGER AS $BODY$
+BEGIN
+    DELETE FROM biblioteca.exemplar
+    WHERE codigo_exemplar IN 
+        (SELECT codigo_exemplar 
+         FROM biblioteca.exemplar
+         WHERE isbn = OLD.isbn);
+    RETURN NULL;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER tg_deleteLivroExemplar
+    BEFORE DELETE ON biblioteca.livro FOR EACH ROW EXECUTE PROCEDURE biblioteca.deleteLivroExemplar();
+
+
+CREATE OR REPLACE FUNCTION biblioteca.setNullEmprestimoExemplar()
+RETURNS TRIGGER AS $BODY$
+BEGIN
+    UPDATE biblioteca.emprestimo
+    SET codigo_exemplar = NULL
+    WHERE codigo_exemplar IN
+        (SELECT codigo_exemplar 
+         FROM biblioteca.exemplar
+         WHERE codigo_exemplar = OLD.codigo_exemplar);
+    RETURN NULL;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER tg_setNullExemplar
+    BEFORE DELETE ON biblioteca.livro FOR EACH ROW EXECUTE PROCEDURE biblioteca.setNullEmprestimoExemplar();
+
+
+CREATE OR REPLACE FUNCTION biblioteca.deleteCategoriaSubordinada()
+RETURNS TRIGGER AS $BODY$
+BEGIN
+    DELETE FROM biblioteca.categoria_subordinada
+    WHERE codigo_super_categoria = OLD.codigo_categoria
+    OR codigo_sub_categoria = OLD.codigo_categoria;
+    RETURN OLD;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+
+CREATE TRIGGER tg_deleteCategoriaSubordinada
+    BEFORE DELETE ON biblioteca.categoria FOR EACH ROW EXECUTE PROCEDURE biblioteca.setNullEmprestimoExemplar();
+
+
+CREATE OR REPLACE FUNCTION biblioteca.checkEmprestimoPendencia()
+    RETURNS TRIGGER AS $$BEGIN IF
+        (SELECT COUNT(*) AS pendencia_count 
+                FROM ((SELECT e.codigo_usuario
+                            FROM biblioteca.emprestimo e
+                            FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                            WHERE e.data_emprestimo = CURRENT_DATE)
+                        INTERSECT
+                        (SELECT e.codigo_usuario
+                            FROM biblioteca.emprestimo e
+                            FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                            WHERE e.data_final < CURRENT_DATE
+                            AND d.data_devolucao is NULL)) AS foo) > 0
+    THEN RAISE EXCEPTION 'Atraso pendente identificado.';
+    END IF; RETURN NEW; END$$
+    LANGUAGE plpgsql;
+    
+CREATE TRIGGER tg_checkEmprestimoPendencia
+    AFTER INSERT ON biblioteca.emprestimo
+    EXECUTE PROCEDURE biblioteca.checkEmprestimoPendencia();

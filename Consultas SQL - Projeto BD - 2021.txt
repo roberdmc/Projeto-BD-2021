@@ -1,0 +1,34 @@
+1) Consultar o nome, rg e cidade do endereço residencial de todos os usuários da biblioteca e, caso possua multas cadastradas, mostrar os dias de atraso para cada uma, o nome do livro emprestado, o valor da multa e a data de pagamento,
+com os dados mostrados em ordem alfabética pelo nome da cidade.
+A consulta envolve as tabelas usuario, endereco_usuario, multa, emprestimo, exemplar e livro, com INNER JOIN e FULL JOIN e uso de COALESE em dados para quando não hajam multas para o usuário, além de ORDER BY.
+
+2) Consultar o nome, rg, telefone e cidade do endereço residencial de todos os bibliotecários, assim como a média do número de empréstimos que já efetuaram e de devoluções e multas que já receberam, com os valores mostrados em ordem
+crescente pelo número de emprestimos efetuados.
+A consulta envolve as tabelas bibliotecario, endereco_bibliotecario, multa, emprestimo e devolucao, com INNER JOIN e FULL JOIN, GROUP BY, COUNT e AVG para os totais e médias, COALESE para dados nulos e ORDER BY para a ordenação.
+
+3) Consultar o titulo e nome do autor de cada livro, assim como o número total de exemplares disponíveis e o total de empréstimos realizados.
+A consulta envolve as tabelas livro, exemplar, autor e empréstimo, com uso de INNER JOIN, GROUP BY para obter os totais e COALESE para o caso de falta de empréstimos.
+
+4) Encontrar o nome de todos os livros e, para cada um, mostrar a data de empréstimo de seu exemplar que resultou na multa de maior valor de atraso, assim como o nome do usuário que efetuou o empréstimo e o valor da multa, em ordem
+alfabetica pelo nome do usuário.
+A consulta envolve as tabelas livro, exemplar, emprestimo, multa e usuario, envolvendo o uso de INNER JOIN e FULL JOIN, além das funções WITH() e MAX() para a obtenção dos maiores valores e ORDER BY para a ordenação.
+
+5) Exibir o número total de emprestimos por exemplar, livro, usuário e autor, assim como o numero total de multas geradas e de devoluções recebidas para cada ite, em ordem alfabetica pelo nome do autor.
+A consulta envolve as tabelas exemplar, livro, emprestimo, multa, devolucao, usuario e autor, com uso de INNER JOIN e FULL JOIN, além de WITH(), COUNT() e GROUP BY para a obtenção dos valores totais e de ORDER BY para a ordenação.
+
+6) Encontrar a categoria onde ocorreu o maior número de empréstimos, mostrando o numero total de empréstimos e de multas geradas, além da media de dias de atraso.
+A consulta envolve as tabelas categoria, emprestimo e multa, com uso de INNER JOIN e FULL JOIN, além de COALESE para dados nulos e WITH(), COUNT() GROUP BY e MAX() para a obtenção do maior valor e dos números totais e AVG() para as médias.
+
+7) Encontrar o usuario com o maior total de dias de atraso (soma de atraso de todos os emprestimos realizados) assim como o valor total pago em multas e a média de atraso e multa por empréstimo.
+A consulta envolve as tabelas usuario, emprestimo e multa, com o uso de INNER JOIN e FULL JOIN e das funções WITH(), COUNT(), SUM() e GROUP BY para a obtenção dos valores totais e AVG() para a obtenção das médias.
+
+8) Encontrar o nome do bibliotecário da cidade de Cascavel que efetuou o maior número de empréstimos no ano de 2022, exibindo também o numero total de empréstimos efetuados por ele.
+A consulta envolve as tabelas bibliotecario, endereco_bibliotecario e emprestimo, com uso de INNER JOIN e das funções WITH(), COUNT(), MAX() e GROUP BY para a obtenção dos valores totais e do maior valor, com 2 condições de igualdade na
+cláusula WHERE.
+
+9) Encontrar o nome dos usuários da cidade de Toledo que efetuaram devoluções em janeiro de 2022 sem atraso/multa, assim como o número total de devoluções que efetuaram nesse período.
+A consulta envolve as tabelas usuario, endereco_usuario, emprestimo, devolucao e multa, com uso de INNER JOIN e das funções WITH(), COUNT() e GROUP BY para a obteção dos valores totais e 3 condições na cláusula WHERE.
+
+10) Encontrar o nome do/s autor/es cadastrados que possui/em a maior quantidade de livros publicados entre os anos 2000 e 2005, assim como o número total de categorias em que publicou neste período.
+A consulta envolve as tabelas autor, livro e categoria, com uso de INNER JOIN e das funções WITH(), COUNT(), GROUP BY e MAX() para a obtenção dos valores totais e maior valor, além de 2 condições de desigualdade na clausula WHERE.
+
