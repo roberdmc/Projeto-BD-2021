@@ -89,3 +89,36 @@ LEFT JOIN tem ON tem.isbn = l.isbn
 ORDER BY total_exemplares DESC;
 
 
+/*4) Encontrar o nome de todos os livros e, para cada um, mostrar a data de empréstimo de seu exemplar que 
+resultou na multa de maior valor de atraso, assim como o nome do usuário que efetuou o empréstimo e o valor 
+da multa, em ordem alfabética pelo nome do usuário. Caso não haja multas para o livro, exibir a frase "Sem
+multas" nos campos referente a multa.
+Funcionamento: A consulta envolve as tabelas livro, exemplar, emprestimo, multa e usuario, envolvendo o uso 
+de INNER JOIN e FULL JOIN, além das funções WITH() e MAX() para a obtenção dos maiores valores e ORDER BY 
+para a ordenação.*/
+
+WITH mv AS 
+    (SELECT l.isbn, MAX(m.valor) AS valor
+    FROM livro l
+    JOIN exemplar ex ON ex.isbn = l.isbn
+    JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+    JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    GROUP BY (l.isbn)),
+emv AS
+    (SELECT l.isbn, em.data_emprestimo, u.nome, m.valor
+    FROM livro l
+    LEFT JOIN mv ON mv.isbn = l.isbn
+    LEFT JOIN exemplar ex ON ex.isbn = l.isbn
+    LEFT JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+    LEFT JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    LEFT JOIN usuario u ON u.codigo_usuario = em.codigo_usuario
+    WHERE m.valor=mv.valor)
+
+SELECT l.titulo, COALESCE(emv.data_emprestimo::text, 'Sem multas') AS data_emprestimo, 
+COALESCE(emv.nome, 'Sem multas') AS nome_usuario, COALESCE(emv.valor::text, 'Sem multas') AS valor_multa
+FROM livro l
+LEFT JOIN emv ON emv.isbn = l.isbn
+ORDER BY nome_usuario;
+
+
+
