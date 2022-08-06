@@ -25,3 +25,44 @@ FROM usuario u
 JOIN endereco_usuario eu ON eu.codigo_usuario = u.codigo_usuario AND codigo_endereco_usuario = 1
 LEFT JOIN um ON um.codigo_usuario = u.codigo_usuario
 ORDER BY eu.cidade;
+
+
+/*2) Consultar o nome, rg, telefone principal (primeiro telefone) e cidade do endereço principal (primeiro 
+endereço) de todos os bibliotecários, assim como a média do número de empréstimos que já efetuaram e de 
+devoluções e multas que já receberam, com os valores mostrados em ordem crescente pelo número de emprestimos 
+efetuados.
+Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecario, multa, emprestimo e 
+devolucao, com INNER JOIN e FULL JOIN, GROUP BY, COUNT e AVG para os totais e médias, COALESE para dados nulos 
+e ORDER BY para a ordenação.*/
+
+WITH
+be AS
+    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     GROUP BY (b.codigo_bibliotecario)
+    ),
+bm AS
+    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY (b.codigo_bibliotecario)
+    ),
+bd AS
+    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY (b.codigo_bibliotecario)
+    )
+
+SELECT b.nome, b.rg, b.telefone[1], eb.cidade, COALESCE(be.count, 0) AS emprestimos, 
+    COALESCE(bd.count, 0) AS devolucoes, COALESCE(bm.count, 0) AS multas
+FROM bibliotecario b
+JOIN endereco_bibliotecario eb ON eb.codigo_bibliotecario = b.codigo_bibliotecario 
+    AND eb.codigo_endereco_bibliotecario = 1
+JOIN be ON be.codigo_bibliotecario = b.codigo_bibliotecario
+LEFT JOIN bm ON bm.codigo_bibliotecario = b.codigo_bibliotecario
+LEFT JOIN bd ON bd.codigo_bibliotecario = b.codigo_bibliotecario
+

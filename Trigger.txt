@@ -1,10 +1,10 @@
-CREATE OR REPLACE FUNCTION biblioteca.deleteLivroExemplar()
+CREATE OR REPLACE FUNCTION deleteLivroExemplar()
 RETURNS TRIGGER AS $BODY$
 BEGIN
-    DELETE FROM biblioteca.exemplar
+    DELETE FROM exemplar
     WHERE codigo_exemplar IN 
         (SELECT codigo_exemplar 
-         FROM biblioteca.exemplar
+         FROM exemplar
          WHERE isbn = OLD.isbn);
     RETURN NULL;
 END;
@@ -12,17 +12,17 @@ $BODY$
 LANGUAGE 'plpgsql';
 
 CREATE TRIGGER tg_deleteLivroExemplar
-    BEFORE DELETE ON biblioteca.livro FOR EACH ROW EXECUTE PROCEDURE biblioteca.deleteLivroExemplar();
+    BEFORE DELETE ON livro FOR EACH ROW EXECUTE PROCEDURE deleteLivroExemplar();
 
 
-CREATE OR REPLACE FUNCTION biblioteca.setNullEmprestimoExemplar()
+CREATE OR REPLACE FUNCTION setNullEmprestimoExemplar()
 RETURNS TRIGGER AS $BODY$
 BEGIN
-    UPDATE biblioteca.emprestimo
+    UPDATE emprestimo
     SET codigo_exemplar = NULL
     WHERE codigo_exemplar IN
         (SELECT codigo_exemplar 
-         FROM biblioteca.exemplar
+         FROM exemplar
          WHERE codigo_exemplar = OLD.codigo_exemplar);
     RETURN NULL;
 END;
@@ -30,13 +30,13 @@ $BODY$
 LANGUAGE 'plpgsql';
 
 CREATE TRIGGER tg_setNullExemplar
-    BEFORE DELETE ON biblioteca.livro FOR EACH ROW EXECUTE PROCEDURE biblioteca.setNullEmprestimoExemplar();
+    BEFORE DELETE ON livro FOR EACH ROW EXECUTE PROCEDURE setNullEmprestimoExemplar();
 
 
-CREATE OR REPLACE FUNCTION biblioteca.deleteCategoriaSubordinada()
+CREATE OR REPLACE FUNCTION deleteCategoriaSubordinada()
 RETURNS TRIGGER AS $BODY$
 BEGIN
-    DELETE FROM biblioteca.categoria_subordinada
+    DELETE FROM categoria_subordinada
     WHERE codigo_super_categoria = OLD.codigo_categoria
     OR codigo_sub_categoria = OLD.codigo_categoria;
     RETURN OLD;
@@ -45,20 +45,20 @@ $BODY$
 LANGUAGE 'plpgsql';
 
 CREATE TRIGGER tg_deleteCategoriaSubordinada
-    BEFORE DELETE ON biblioteca.categoria FOR EACH ROW EXECUTE PROCEDURE biblioteca.setNullEmprestimoExemplar();
+    BEFORE DELETE ON categoria FOR EACH ROW EXECUTE PROCEDURE setNullEmprestimoExemplar();
 
 
-CREATE OR REPLACE FUNCTION biblioteca.checkEmprestimoPendencia()
+CREATE OR REPLACE FUNCTION checkEmprestimoPendencia()
     RETURNS TRIGGER AS $$BEGIN IF
         (SELECT COUNT(*) AS pendencia_count 
                 FROM ((SELECT e.codigo_usuario
-                            FROM biblioteca.emprestimo e
-                            FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                            FROM emprestimo e
+                            FULL JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
                             WHERE e.data_emprestimo = CURRENT_DATE)
                         INTERSECT
                         (SELECT e.codigo_usuario
-                            FROM biblioteca.emprestimo e
-                            FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                            FROM emprestimo e
+                            FULL JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
                             WHERE e.data_final < CURRENT_DATE
                             AND d.data_devolucao is NULL)) AS foo) > 0
     THEN RAISE EXCEPTION 'Atraso pendente identificado.';
@@ -66,5 +66,5 @@ CREATE OR REPLACE FUNCTION biblioteca.checkEmprestimoPendencia()
     LANGUAGE plpgsql;
     
 CREATE TRIGGER tg_checkEmprestimoPendencia
-    AFTER INSERT ON biblioteca.emprestimo
-    EXECUTE PROCEDURE biblioteca.checkEmprestimoPendencia();
+    AFTER INSERT ON emprestimo
+    EXECUTE PROCEDURE checkEmprestimoPendencia();
