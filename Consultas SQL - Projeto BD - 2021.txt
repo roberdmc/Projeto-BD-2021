@@ -28,11 +28,11 @@ ORDER BY eu.cidade;
 
 
 /*2) Consultar o nome, rg, telefone principal (primeiro telefone) e cidade do endereço principal (primeiro 
-endereço) de todos os bibliotecários, assim como a média do número de empréstimos que já efetuaram e de 
-devoluções e multas que já receberam, com os valores mostrados em ordem crescente pelo número de emprestimos 
+endereço) de todos os bibliotecários, assim como o número de empréstimos que já efetuaram e de 
+devoluções e multas que já receberam, com os valores mostrados em ordem decrescente pelo número de emprestimos 
 efetuados.
 Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecario, multa, emprestimo e 
-devolucao, com INNER JOIN e FULL JOIN, GROUP BY, COUNT e AVG para os totais e médias, COALESE para dados nulos 
+devolucao, com INNER JOIN e FULL JOIN, GROUP BY, COUNT para os totais, COALESE para dados nulos 
 e ORDER BY para a ordenação.*/
 
 WITH
@@ -65,4 +65,4 @@ JOIN endereco_bibliotecario eb ON eb.codigo_bibliotecario = b.codigo_bibliotecar
 JOIN be ON be.codigo_bibliotecario = b.codigo_bibliotecario
 LEFT JOIN bm ON bm.codigo_bibliotecario = b.codigo_bibliotecario
 LEFT JOIN bd ON bd.codigo_bibliotecario = b.codigo_bibliotecario
-
+ORDER BY emprestimos DESC;
