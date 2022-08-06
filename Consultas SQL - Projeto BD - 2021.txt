@@ -37,24 +37,24 @@ e ORDER BY para a ordenação.*/
 
 WITH
 be AS
-    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+    (SELECT e.codigo_bibliotecario, count(e.codigo_bibliotecario)
      FROM bibliotecario b
      JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
-     GROUP BY (b.codigo_bibliotecario)
+     GROUP BY (e.codigo_bibliotecario)
     ),
 bm AS
-    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+    (SELECT m.codigo_bibliotecario, count(m.codigo_bibliotecario)
      FROM bibliotecario b
      JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
      JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo
-     GROUP BY (b.codigo_bibliotecario)
+     GROUP BY (m.codigo_bibliotecario)
     ),
 bd AS
-    (SELECT b.codigo_bibliotecario, count(b.codigo_bibliotecario)
+    (SELECT d.codigo_bibliotecario, count(d.codigo_bibliotecario)
      FROM bibliotecario b
      JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
      JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
-     GROUP BY (b.codigo_bibliotecario)
+     GROUP BY (d.codigo_bibliotecario)
     )
 
 SELECT b.nome, b.rg, b.telefone[1], eb.cidade, COALESCE(be.count, 0) AS emprestimos, 
