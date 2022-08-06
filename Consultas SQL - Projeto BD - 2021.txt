@@ -1,12 +1,12 @@
---1) Consultar o nome, rg e cidade do endereço principal (primeiro endereço) de todos os usuários da biblioteca  
---e, caso possua multas cadastradas com 3 ou mais dias de atraso, mostrar os dias de atraso para cada uma, 
---o titulo do livro emprestado, o valor da multa e a data de pagamento, com os dados mostrados em ordem 
---alfabética pelo nome da cidade. Caso não possua multas, deverá exibir a frase "Não possui" nos campos 
---referentes a multa.
---Funcionamento: A consulta envolve as tabelas usuario, endereco_usuario, multa, emprestimo, exemplar e 
---livro, com WITH AS para a subconsulta dos usuarios com multa, INNER JOIN e LEFT JOIN para as junções e uso
---de COALESE em dados para quando não existam multas com mais de 3 dias de atraso para o usuário, além de 
---ORDER BY para a ordenação.
+/*1) Consultar o nome, rg e cidade do endereço principal (primeiro endereço) de todos os usuários da biblioteca  
+e, caso possua multas cadastradas com 3 ou mais dias de atraso, mostrar os dias de atraso para cada uma, 
+o titulo do livro emprestado, o valor da multa e a data de pagamento, com os dados mostrados em ordem 
+alfabética pelo nome da cidade. Caso não possua multas, deverá exibir a frase "Não possui" nos campos 
+referentes a multa.
+Funcionamento: A consulta envolve as tabelas usuario, endereco_usuario, multa, emprestimo, exemplar e 
+livro, com WITH AS para a subconsulta dos usuarios com multa, INNER JOIN e LEFT JOIN para as junções e uso
+de COALESE em dados para quando não existam multas com mais de 3 dias de atraso para o usuário, além de 
+ORDER BY para a ordenação.*/
 
 WITH um AS 
     (SELECT u.codigo_usuario, m.dias_atraso, l.titulo, m.valor, m.data_pagamento
