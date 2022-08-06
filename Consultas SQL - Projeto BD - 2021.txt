@@ -11,7 +11,6 @@
 WITH um AS 
     (SELECT u.codigo_usuario, m.dias_atraso, l.titulo, m.valor, m.data_pagamento
     FROM usuario u
-    JOIN endereco_usuario eu ON eu.codigo_usuario = u.codigo_usuario AND codigo_endereco_usuario = 1
     JOIN emprestimo e ON e.codigo_usuario = u.codigo_usuario
     JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo AND m.dias_atraso >= 3
     LEFT JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
