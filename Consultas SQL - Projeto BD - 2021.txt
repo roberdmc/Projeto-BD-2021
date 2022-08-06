@@ -35,8 +35,7 @@ Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecar
 devolucao, com INNER JOIN e FULL JOIN, GROUP BY, COUNT para os totais, COALESE para dados nulos 
 e ORDER BY para a ordenação.*/
 
-WITH
-be AS
+WITH be AS
     (SELECT e.codigo_bibliotecario, count(e.codigo_bibliotecario)
      FROM bibliotecario b
      JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
@@ -66,3 +65,27 @@ JOIN be ON be.codigo_bibliotecario = b.codigo_bibliotecario
 LEFT JOIN bm ON bm.codigo_bibliotecario = b.codigo_bibliotecario
 LEFT JOIN bd ON bd.codigo_bibliotecario = b.codigo_bibliotecario
 ORDER BY emprestimos DESC;
+
+
+/*3) Consultar o título e nome do autor de cada livro, assim como o número total de exemplares disponíveis e 
+o total de empréstimos realizados, com os valores mostrados em ordem decrescente pelo total de exemplares. 
+Funcionamento: A consulta envolve as tabelas livro, exemplar, autor e empréstimo, com uso de INNER JOIN, 
+WITH para as subconsultas, GROUP BY para obter os totais e COALESCE para o caso de falta de empréstimos.*/
+
+WITH tex AS 
+    (SELECT e.isbn, COUNT(e.isbn)
+     FROM exemplar e
+     GROUP BY (e.isbn)),
+tem AS
+    (SELECT ex.isbn, COUNT(ex.isbn)
+     FROM exemplar ex
+     JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+     GROUP BY (ex.isbn))
+SELECT l.titulo, a.nome, COALESCE(tex.count, 0) AS total_exemplares, COALESCE(tem.count, 0) AS total_emprestimos
+FROM livro l
+JOIN autor a ON a.codigo_autor = l.codigo_autor
+LEFT JOIN tex ON tex.isbn = l.isbn
+LEFT JOIN tem ON tem.isbn = l.isbn
+ORDER BY total_exemplares DESC;
+
+
