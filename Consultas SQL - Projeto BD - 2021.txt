@@ -152,3 +152,37 @@ FROM usuario u
 LEFT JOIN te ON te.codigo_usuario = u.codigo_usuario
 LEFT JOIN tm ON tm.codigo_usuario = u.codigo_usuario
 LEFT JOIN td ON td.codigo_usuario = u.codigo_usuario
+
+
+/*6) Encontrar a categoria onde ocorreu o maior número de empréstimos, mostrando o número total de empréstimos 
+e de multas geradas, além da média de dias de atraso.
+Funcionamento: A consulta envolve as tabelas categoria, emprestimo e multa, com uso de INNER JOIN e  LEFT JOIN
+para as junções, além de COALESE para dados nulos e WITH(), COUNT(), GROUP BY e MAX() para a obtenção do maior
+valor e dos números totais e AVG() para as médias.*/
+
+WITH tec AS
+    (SELECT c.codigo_categoria, c.nome, COUNT(c.codigo_categoria)
+    FROM emprestimo em
+    JOIN exemplar ex ON ex.codigo_exemplar = em.codigo_exemplar
+    JOIN livro l ON ex.isbn = l.isbn
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    GROUP BY (c.codigo_categoria, c.nome)),
+tmc AS
+    (SELECT c.codigo_categoria, AVG(m.dias_atraso) AS media_atraso, COUNT(c.codigo_categoria) AS total_multas
+    FROM emprestimo em
+    JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    JOIN exemplar ex ON ex.codigo_exemplar = em.codigo_exemplar
+    JOIN livro l ON ex.isbn = l.isbn
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    JOIN tec on tec.codigo_categoria = c.codigo_categoria
+    GROUP BY (c.codigo_categoria))
+     
+SELECT tec.nome, tec.count AS total_emprestimos, COALESCE(tmc.total_multas::text, 'Sem multas') AS total_multas, 
+COALESCE(tmc.media_atraso::text, 'Sem multas') AS media_atraso
+FROM tec
+LEFT JOIN tmc ON tmc.codigo_categoria = tec.codigo_categoria
+WHERE tec.codigo_categoria IN 
+    (SELECT codigo_categoria FROM tec WHERE count IN 
+        (SELECT MAX(count) AS codigo_categoria FROM tec))
+
+
