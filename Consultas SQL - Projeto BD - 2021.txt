@@ -92,7 +92,7 @@ resultou na multa de maior valor de atraso, assim como o nome do usuário que ef
 da multa, em ordem alfabética pelo nome do usuário. Caso não haja multas para o livro, exibir a frase "Sem
 multas" nos campos referente a multa.
 Funcionamento: A consulta envolve as tabelas livro, exemplar, emprestimo, multa e usuario, envolvendo o uso 
-de INNER JOIN e FULL JOIN, além das funções WITH() e MAX() para a obtenção dos maiores valores e ORDER BY 
+de INNER JOIN e LEFT JOIN, além das funções WITH() e MAX() para a obtenção dos maiores valores e ORDER BY 
 para a ordenação.*/
 
 WITH mv AS 
