@@ -17,7 +17,6 @@ WITH um AS
     LEFT JOIN exemplar ex ON ex.codigo_exemplar = e.codigo_exemplar
     LEFT JOIN livro l ON l.isbn = ex.isbn
     WHERE m.dias_atraso >= 3)
-    
 SELECT u.nome, u.rg, eu.cidade, COALESCE(um.dias_atraso::text, 'Não possui') AS dias_atraso, 
 COALESCE(um.titulo, 'Não possui') AS titulo, COALESCE(um.valor::text, 'Não possui') AS valor, 
 COALESCE(um.data_pagamento::text, 'Não possui') AS data_pagamento
@@ -55,7 +54,6 @@ bd AS
      JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
      GROUP BY (d.codigo_bibliotecario)
     )
-
 SELECT b.nome, b.rg, b.telefone[1], eb.cidade, COALESCE(be.count, 0) AS emprestimos, 
     COALESCE(bd.count, 0) AS devolucoes, COALESCE(bm.count, 0) AS multas
 FROM bibliotecario b
@@ -113,7 +111,6 @@ emv AS
     LEFT JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
     LEFT JOIN usuario u ON u.codigo_usuario = em.codigo_usuario
     WHERE m.valor=mv.valor)
-
 SELECT l.titulo, COALESCE(emv.data_emprestimo::text, 'Sem multas') AS data_emprestimo, 
 COALESCE(emv.nome, 'Sem multas') AS nome_usuario, COALESCE(emv.valor::text, 'Sem multas') AS valor_multa
 FROM livro l
@@ -145,13 +142,12 @@ td AS
      JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
      GROUP BY(codigo_usuario)
     )
-    
 SELECT u.nome, COALESCE(te.count::text, 'Sem dados') AS emprestimos,  COALESCE(tm.count::text, 'Sem dados') AS multas,  
 COALESCE(td.count::text, 'Sem dados') AS devolucoes
 FROM usuario u
 LEFT JOIN te ON te.codigo_usuario = u.codigo_usuario
 LEFT JOIN tm ON tm.codigo_usuario = u.codigo_usuario
-LEFT JOIN td ON td.codigo_usuario = u.codigo_usuario
+LEFT JOIN td ON td.codigo_usuario = u.codigo_usuario;
 
 
 /*6) Encontrar a categoria onde ocorreu o maior número de empréstimos, mostrando o número total de empréstimos 
@@ -176,14 +172,13 @@ tmc AS
     JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
     JOIN tec on tec.codigo_categoria = c.codigo_categoria
     GROUP BY (c.codigo_categoria))
-     
 SELECT tec.nome, tec.count AS total_emprestimos, COALESCE(tmc.total_multas::text, 'Sem multas') AS total_multas, 
 COALESCE(tmc.media_atraso::text, 'Sem multas') AS media_atraso
 FROM tec
 LEFT JOIN tmc ON tmc.codigo_categoria = tec.codigo_categoria
 WHERE tec.codigo_categoria IN 
     (SELECT codigo_categoria FROM tec WHERE count IN 
-        (SELECT MAX(count) AS codigo_categoria FROM tec))
+        (SELECT MAX(count) AS codigo_categoria FROM tec));
 
 
 /*7) Encontrar o usuario com o maior total de dias de atraso (soma de atraso de todos os emprestimos realizados) 
@@ -201,12 +196,11 @@ umt AS
     FROM usuario u
     JOIN um ON u.codigo_usuario = um.codigo_usuario
     GROUP BY (u.codigo_usuario))
-
 SELECT u.nome, umt.total_dias_atraso, umt.total_valor_pago
 FROM usuario u
 JOIN umt ON umt.codigo_usuario = u.codigo_usuario
 WHERE umt.total_dias_atraso IN
-    (SELECT MAX(total_dias_atraso) FROM umt)
+    (SELECT MAX(total_dias_atraso) FROM umt);
 
 
 /*8) Encontrar o nome do bibliotecário da cidade de Cascavel (endereço principal) que efetuou o maior número de 
@@ -224,12 +218,11 @@ WITH emb AS
     AND eb.cidade = 'Cascavel'
     AND DATE_PART('year', e.data_emprestimo) = 2022
     GROUP BY (b.codigo_bibliotecario))
-
 SELECT b.nome, emb.emprestimos
 FROM bibliotecario b
 JOIN emb ON emb.codigo_bibliotecario = b.codigo_bibliotecario
 WHERE emb.emprestimos IN
-    (SELECT MAX(emprestimos) FROM emb)
+    (SELECT MAX(emprestimos) FROM emb);
 
 
 /*9) Encontrar o nome dos usuários da cidade de Toledo (endereço principal) que efetuaram devoluções em 
@@ -250,10 +243,9 @@ WITH du AS
     AND DATE_PART('month', d.data_devolucao) = 01
     AND m.codigo_multa IS NULL
     GROUP BY (u.codigo_usuario))
-    
 SELECT u.nome, du.count AS devolucoes
 FROM usuario u
-JOIN du ON du.codigo_usuario = u.codigo_usuario
+JOIN du ON du.codigo_usuario = u.codigo_usuario;
 
 
 /*10) Encontrar o nome do autor cadastrado que possui a maior quantidade de livros publicados entre os 
