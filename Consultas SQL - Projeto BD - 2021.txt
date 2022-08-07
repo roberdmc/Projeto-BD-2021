@@ -118,10 +118,10 @@ LEFT JOIN emv ON emv.isbn = l.isbn
 ORDER BY nome_usuario;
 
 
-/*5) Exibir o número total de emprestimos por usuário e autor, assim como o número total de multas geradas 
+/*5) Exibir o número total de emprestimos por usuário, assim como o número total de multas geradas 
 e de devoluções recebidas, em ordem alfabética pelo nome do usuario. Caso não exista algum valor para o 
 usuário, exibir a frase “Sem dados”.
-Funcionamento: A consulta envolve as tabelas exemplar, livro, emprestimo, multa, devolucao, usuario e autor, 
+Funcionamento: A consulta envolve as tabelas exemplar, livro, emprestimo, multa, devolucao e usuario,
 com uso de LEFT JOIN para as junções, WITH() para as sub consultas, COUNT() e GROUP BY para a obtenção dos valores totais e de 
 ORDER BY para a ordenação.*/
 
@@ -266,4 +266,4 @@ SELECT a.nome, lp.count
 FROM autor a
 JOIN lp ON lp.codigo_autor = a.codigo_autor
 WHERE lp.count IN
-    (SELECT MAX(count) FROM lp)
+    (SELECT MAX(count) FROM lp);
