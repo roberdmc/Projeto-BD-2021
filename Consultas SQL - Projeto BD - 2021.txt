@@ -209,3 +209,26 @@ WHERE umt.total_dias_atraso IN
     (SELECT MAX(total_dias_atraso) FROM umt)
 
 
+/*8) Encontrar o nome do bibliotecário da cidade de Cascavel (endereço principal) que efetuou o maior número de 
+empréstimos no ano de 2022, exibindo também o número total de empréstimos efetuados por ele.
+Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecario e emprestimo, com uso de 
+INNER JOIN e das funções WITH(), COUNT(), MAX() e GROUP BY para a obtenção dos valores totais e do maior valor, 
+com 4 condições de igualdade em cláusula WHERE.*/
+
+WITH emb AS
+    (SELECT b.codigo_bibliotecario, COUNT(b.codigo_bibliotecario) AS emprestimos
+    FROM emprestimo e
+    JOIN bibliotecario b ON b.codigo_bibliotecario = e.codigo_bibliotecario
+    JOIN endereco_bibliotecario eb ON eb.codigo_bibliotecario = b.codigo_bibliotecario
+    WHERE eb.codigo_endereco_bibliotecario = 1
+    AND eb.cidade = 'Cascavel'
+    AND DATE_PART('year', e.data_emprestimo) = 2022
+    GROUP BY (b.codigo_bibliotecario))
+
+SELECT b.nome, emb.emprestimos
+FROM bibliotecario b
+JOIN emb ON emb.codigo_bibliotecario = b.codigo_bibliotecario
+WHERE emb.emprestimos IN
+    (SELECT MAX(emprestimos) FROM emb)
+
+
