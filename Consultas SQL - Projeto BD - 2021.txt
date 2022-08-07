@@ -186,3 +186,26 @@ WHERE tec.codigo_categoria IN
         (SELECT MAX(count) AS codigo_categoria FROM tec))
 
 
+/*7) Encontrar o usuario com o maior total de dias de atraso (soma de atraso de todos os emprestimos realizados) 
+e mostrar também o valor total pago em multas.
+Funcionamento: A consulta envolve as tabelas usuario, emprestimo e multa, com o uso de INNER JOIN e das 
+funções WITH(), MAX(), COUNT(), SUM() e GROUP BY para a obtenção dos valores totais e maior valor*/
+
+WITH um AS 
+    (SELECT u.codigo_usuario, m.dias_atraso, m.valor
+    FROM emprestimo e
+    JOIN usuario u ON u.codigo_usuario = e.codigo_usuario
+    JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo),
+umt AS 
+    (SELECT u.codigo_usuario, SUM(um.dias_atraso) AS total_dias_atraso, SUM(um.valor) AS total_valor_pago
+    FROM usuario u
+    JOIN um ON u.codigo_usuario = um.codigo_usuario
+    GROUP BY (u.codigo_usuario))
+
+SELECT u.nome, umt.total_dias_atraso, umt.total_valor_pago
+FROM usuario u
+JOIN umt ON umt.codigo_usuario = u.codigo_usuario
+WHERE umt.total_dias_atraso IN
+    (SELECT MAX(total_dias_atraso) FROM umt)
+
+
