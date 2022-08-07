@@ -232,3 +232,27 @@ WHERE emb.emprestimos IN
     (SELECT MAX(emprestimos) FROM emb)
 
 
+/*9) Encontrar o nome dos usuários da cidade de Toledo (endereço principal) que efetuaram devoluções em 
+janeiro de 2022 sem atraso/multa, assim como o número total de devoluções que efetuaram nesse período.
+Funcionamento: A consulta envolve as tabelas usuario, endereco_usuario, emprestimo, devolucao e multa, com uso 
+de INNER JOIN e das funções WITH(), COUNT() e GROUP BY para a obtenção dos valores totais e 4 condições em 
+cláusula WHERE.*/
+
+WITH du AS 
+    (SELECT u.codigo_usuario, COUNT(u.codigo_usuario)
+    FROM emprestimo em
+    JOIN usuario u ON u.codigo_usuario = em.codigo_usuario
+    JOIN devolucao d ON d.codigo_emprestimo = em.codigo_emprestimo
+    JOIN endereco_usuario eu ON eu.codigo_usuario = u.codigo_usuario
+    LEFT JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    WHERE eu.codigo_endereco_usuario = 1
+    AND eu.cidade = 'Toledo'
+    AND DATE_PART('month', d.data_devolucao) = 01
+    AND m.codigo_multa IS NULL
+    GROUP BY (u.codigo_usuario))
+    
+SELECT u.nome, du.count AS devolucoes
+FROM usuario u
+JOIN du ON du.codigo_usuario = u.codigo_usuario
+
+
