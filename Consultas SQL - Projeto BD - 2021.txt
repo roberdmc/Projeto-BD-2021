@@ -256,3 +256,22 @@ FROM usuario u
 JOIN du ON du.codigo_usuario = u.codigo_usuario
 
 
+/*10) Encontrar o nome do autor cadastrado que possui a maior quantidade de livros publicados entre os 
+anos 2000 e 2005 disponíveis no sistema.
+Funcionamento: A consulta envolve as tabelas autor, livro e categoria, com uso de INNER JOIN e das funções 
+WITH(), COUNT(), GROUP BY e MAX() para a obtenção dos valores totais e maior valor, além de 3 em clausula WHERE.*/
+
+WITH lp AS
+    (SELECT a.codigo_autor, COUNT(a.codigo_autor)
+    FROM livro l
+    JOIN autor a ON a.codigo_autor = l.codigo_autor
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    WHERE DATE_PART('year', l.data_publicacao) >= 2000
+    AND DATE_PART('year', l.data_publicacao) <= 2005
+    GROUP BY(a.codigo_autor))
+
+SELECT a.nome, lp.count
+FROM autor a
+JOIN lp ON lp.codigo_autor = a.codigo_autor
+WHERE lp.count IN
+    (SELECT MAX(count) FROM lp)
