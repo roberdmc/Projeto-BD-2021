@@ -1,0 +1,270 @@
+/*1) Consultar o nome, rg e cidade do endereço principal (primeiro endereço) de todos os usuários da biblioteca  
+e, caso possua multas cadastradas com 3 ou mais dias de atraso, mostrar os dias de atraso para cada uma, 
+o titulo do livro emprestado, o valor da multa e a data de pagamento, com os dados mostrados em ordem 
+alfabética pelo nome da cidade. Caso não possua multas, deverá exibir a frase "Não possui" nos campos 
+referentes a multa.
+Funcionamento: A consulta envolve as tabelas usuario, endereco_usuario, multa, emprestimo, exemplar e 
+livro, com WITH AS para a subconsulta dos usuarios com multa, INNER JOIN e LEFT JOIN para as junções e uso
+de COALESE em dados para quando não existam multas com mais de 3 dias de atraso para o usuário, além de 
+ORDER BY para a ordenação.*/
+
+WITH um AS 
+    (SELECT u.codigo_usuario, m.dias_atraso, l.titulo, m.valor, m.data_pagamento
+    FROM usuario u
+    JOIN emprestimo e ON e.codigo_usuario = u.codigo_usuario
+    JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo AND m.dias_atraso >= 3
+    LEFT JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+    LEFT JOIN exemplar ex ON ex.codigo_exemplar = e.codigo_exemplar
+    LEFT JOIN livro l ON l.isbn = ex.isbn
+    WHERE m.dias_atraso >= 3)
+SELECT u.nome, u.rg, eu.cidade, COALESCE(um.dias_atraso::text, 'Não possui') AS dias_atraso, 
+COALESCE(um.titulo, 'Não possui') AS titulo, COALESCE(um.valor::text, 'Não possui') AS valor, 
+COALESCE(um.data_pagamento::text, 'Não possui') AS data_pagamento
+FROM usuario u
+JOIN endereco_usuario eu ON eu.codigo_usuario = u.codigo_usuario AND codigo_endereco_usuario = 1
+LEFT JOIN um ON um.codigo_usuario = u.codigo_usuario
+ORDER BY eu.cidade;
+
+
+/*2) Consultar o nome, rg, telefone e cidade do endereço principal (primeiro 
+endereço) de todos os bibliotecários, assim como o número de empréstimos que já efetuaram e de 
+devoluções e multas que já receberam, com os valores mostrados em ordem decrescente pelo número de emprestimos 
+efetuados.
+Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecario, multa, emprestimo e 
+devolucao, com INNER JOIN e LEFT JOIN, GROUP BY, COUNT para os totais, COALESE para dados nulos 
+e ORDER BY para a ordenação.*/
+
+WITH be AS
+    (SELECT e.codigo_bibliotecario, count(e.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     GROUP BY (e.codigo_bibliotecario)
+    ),
+bm AS
+    (SELECT m.codigo_bibliotecario, count(m.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY (m.codigo_bibliotecario)
+    ),
+bd AS
+    (SELECT d.codigo_bibliotecario, count(d.codigo_bibliotecario)
+     FROM bibliotecario b
+     JOIN emprestimo e ON e.codigo_bibliotecario = b.codigo_bibliotecario
+     JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY (d.codigo_bibliotecario)
+    )
+SELECT b.nome, b.rg, b.telefone, eb.cidade, COALESCE(be.count, 0) AS emprestimos, 
+    COALESCE(bd.count, 0) AS devolucoes, COALESCE(bm.count, 0) AS multas
+FROM bibliotecario b
+JOIN endereco_bibliotecario eb ON eb.codigo_bibliotecario = b.codigo_bibliotecario 
+    AND eb.codigo_endereco_bibliotecario = 1
+JOIN be ON be.codigo_bibliotecario = b.codigo_bibliotecario
+LEFT JOIN bm ON bm.codigo_bibliotecario = b.codigo_bibliotecario
+LEFT JOIN bd ON bd.codigo_bibliotecario = b.codigo_bibliotecario
+ORDER BY emprestimos DESC;
+
+
+/*3) Consultar o título e nome do autor de cada livro, assim como o número total de exemplares disponíveis e 
+o total de empréstimos realizados, com os valores mostrados em ordem decrescente pelo total de exemplares. 
+Funcionamento: A consulta envolve as tabelas livro, exemplar, autor e empréstimo, com uso de INNER JOIN, 
+LEFT JOIN, WITH para as subconsultas, GROUP BY para obter os totais e COALESCE para o caso de falta de 
+empréstimos.*/
+
+WITH tex AS 
+    (SELECT e.isbn, COUNT(e.isbn)
+     FROM exemplar e
+     GROUP BY (e.isbn)),
+tem AS
+    (SELECT ex.isbn, COUNT(ex.isbn)
+     FROM exemplar ex
+     JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+     GROUP BY (ex.isbn))
+SELECT l.titulo, a.nome, COALESCE(tex.count, 0) AS total_exemplares, COALESCE(tem.count, 0) AS total_emprestimos
+FROM livro l
+JOIN autor a ON a.codigo_autor = l.codigo_autor
+LEFT JOIN tex ON tex.isbn = l.isbn
+LEFT JOIN tem ON tem.isbn = l.isbn
+ORDER BY total_exemplares DESC;
+
+
+/*4) Encontrar o nome de todos os livros e, para cada um, mostrar a data de empréstimo de seu exemplar que 
+resultou na multa de maior valor de atraso, assim como o nome do usuário que efetuou o empréstimo e o valor 
+da multa, em ordem alfabética pelo nome do usuário. Caso não haja multas para o livro, exibir a frase "Sem
+multas" nos campos referente a multa.
+Funcionamento: A consulta envolve as tabelas livro, exemplar, emprestimo, multa e usuario, envolvendo o uso 
+de INNER JOIN e LEFT JOIN, além das funções WITH() e MAX() para a obtenção dos maiores valores e ORDER BY 
+para a ordenação.*/
+
+WITH mv AS 
+    (SELECT l.isbn, MAX(m.valor) AS valor
+    FROM livro l
+    JOIN exemplar ex ON ex.isbn = l.isbn
+    JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+    JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    GROUP BY (l.isbn)),
+emv AS
+    (SELECT l.isbn, em.data_emprestimo, u.nome, m.valor
+    FROM livro l
+    LEFT JOIN mv ON mv.isbn = l.isbn
+    LEFT JOIN exemplar ex ON ex.isbn = l.isbn
+    LEFT JOIN emprestimo em ON em.codigo_exemplar = ex.codigo_exemplar
+    LEFT JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    LEFT JOIN usuario u ON u.codigo_usuario = em.codigo_usuario
+    WHERE m.valor=mv.valor)
+SELECT l.titulo, COALESCE(emv.data_emprestimo::text, 'Sem multas') AS data_emprestimo, 
+COALESCE(emv.nome, 'Sem multas') AS nome_usuario, COALESCE(emv.valor::text, 'Sem multas') AS valor_multa
+FROM livro l
+LEFT JOIN emv ON emv.isbn = l.isbn
+ORDER BY nome_usuario;
+
+
+/*5) Exibir o número total de emprestimos por usuário, assim como o número total de multas geradas 
+e de devoluções recebidas, em ordem alfabética pelo nome do usuario. Caso não exista algum valor para o 
+usuário, exibir a frase “Sem dados”.
+Funcionamento: A consulta envolve as tabelas exemplar, livro, emprestimo, multa, devolucao e usuario,
+com uso de INNER JOIN e LEFT JOIN para as junções, WITH() para as sub consultas, COUNT() e GROUP BY 
+para a obtenção dos valores totais e de ORDER BY para a ordenação.*/
+
+WITH te AS
+    (SELECT codigo_usuario, COUNT(codigo_usuario)
+     FROM emprestimo
+     GROUP BY(codigo_usuario)
+    ),
+tm AS
+    (SELECT e.codigo_usuario, COUNT(e.codigo_usuario)
+     FROM emprestimo e
+     JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY(codigo_usuario)
+    ),
+td AS
+    (SELECT e.codigo_usuario, COUNT(e.codigo_usuario)
+     FROM emprestimo e
+     JOIN devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+     GROUP BY(codigo_usuario)
+    )
+SELECT u.nome, COALESCE(te.count::text, 'Sem dados') AS emprestimos,  COALESCE(tm.count::text, 'Sem dados') AS multas,  
+COALESCE(td.count::text, 'Sem dados') AS devolucoes
+FROM usuario u
+LEFT JOIN te ON te.codigo_usuario = u.codigo_usuario
+LEFT JOIN tm ON tm.codigo_usuario = u.codigo_usuario
+LEFT JOIN td ON td.codigo_usuario = u.codigo_usuario;
+
+
+/*6) Encontrar a categoria onde ocorreu o maior número de empréstimos, mostrando o número total de empréstimos 
+e de multas geradas, além da média de dias de atraso.
+Funcionamento: A consulta envolve as tabelas categoria, emprestimo e multa, com uso de INNER JOIN e  LEFT JOIN
+para as junções, além de COALESE para dados nulos e WITH(), COUNT(), GROUP BY e MAX() para a obtenção do maior
+valor e dos números totais e AVG() para as médias.*/
+
+WITH tec AS
+    (SELECT c.codigo_categoria, c.nome, COUNT(c.codigo_categoria)
+    FROM emprestimo em
+    JOIN exemplar ex ON ex.codigo_exemplar = em.codigo_exemplar
+    JOIN livro l ON ex.isbn = l.isbn
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    GROUP BY (c.codigo_categoria, c.nome)),
+tmc AS
+    (SELECT c.codigo_categoria, AVG(m.dias_atraso) AS media_atraso, COUNT(c.codigo_categoria) AS total_multas
+    FROM emprestimo em
+    JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    JOIN exemplar ex ON ex.codigo_exemplar = em.codigo_exemplar
+    JOIN livro l ON ex.isbn = l.isbn
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    JOIN tec on tec.codigo_categoria = c.codigo_categoria
+    GROUP BY (c.codigo_categoria))
+SELECT tec.nome, tec.count AS total_emprestimos, COALESCE(tmc.total_multas::text, 'Sem multas') AS total_multas, 
+COALESCE(tmc.media_atraso::text, 'Sem multas') AS media_atraso
+FROM tec
+LEFT JOIN tmc ON tmc.codigo_categoria = tec.codigo_categoria
+WHERE tec.codigo_categoria IN 
+    (SELECT codigo_categoria FROM tec WHERE count IN 
+        (SELECT MAX(count) AS codigo_categoria FROM tec));
+
+
+/*7) Encontrar o usuario com o maior total de dias de atraso (soma de atraso de todos os emprestimos realizados) 
+e mostrar também o valor total pago em multas.
+Funcionamento: A consulta envolve as tabelas usuario, emprestimo e multa, com o uso de INNER JOIN e das 
+funções WITH(), MAX(), COUNT(), SUM() e GROUP BY para a obtenção dos valores totais e maior valor*/
+
+WITH um AS 
+    (SELECT u.codigo_usuario, m.dias_atraso, m.valor
+    FROM emprestimo e
+    JOIN usuario u ON u.codigo_usuario = e.codigo_usuario
+    JOIN multa m ON m.codigo_emprestimo = e.codigo_emprestimo),
+umt AS 
+    (SELECT u.codigo_usuario, SUM(um.dias_atraso) AS total_dias_atraso, SUM(um.valor) AS total_valor_pago
+    FROM usuario u
+    JOIN um ON u.codigo_usuario = um.codigo_usuario
+    GROUP BY (u.codigo_usuario))
+SELECT u.nome, umt.total_dias_atraso, umt.total_valor_pago
+FROM usuario u
+JOIN umt ON umt.codigo_usuario = u.codigo_usuario
+WHERE umt.total_dias_atraso IN
+    (SELECT MAX(total_dias_atraso) FROM umt);
+
+
+/*8) Encontrar o nome do bibliotecário da cidade de Cascavel (endereço principal) que efetuou o maior número de 
+empréstimos no ano de 2022, exibindo também o número total de empréstimos efetuados por ele.
+Funcionamento: A consulta envolve as tabelas bibliotecario, endereco_bibliotecario e emprestimo, com uso de 
+INNER JOIN e das funções WITH(), COUNT(), MAX() e GROUP BY para a obtenção dos valores totais e do maior valor, 
+com 4 condições de igualdade em cláusula WHERE.*/
+
+WITH emb AS
+    (SELECT b.codigo_bibliotecario, COUNT(b.codigo_bibliotecario) AS emprestimos
+    FROM emprestimo e
+    JOIN bibliotecario b ON b.codigo_bibliotecario = e.codigo_bibliotecario
+    JOIN endereco_bibliotecario eb ON eb.codigo_bibliotecario = b.codigo_bibliotecario
+    WHERE eb.codigo_endereco_bibliotecario = 1
+    AND eb.cidade = 'Cascavel'
+    AND DATE_PART('year', e.data_emprestimo) = 2022
+    GROUP BY (b.codigo_bibliotecario))
+SELECT b.nome, emb.emprestimos
+FROM bibliotecario b
+JOIN emb ON emb.codigo_bibliotecario = b.codigo_bibliotecario
+WHERE emb.emprestimos IN
+    (SELECT MAX(emprestimos) FROM emb);
+
+
+/*9) Encontrar o nome dos usuários da cidade de Toledo (endereço principal) que efetuaram devoluções em 
+janeiro de 2022 sem atraso/multa, assim como o número total de devoluções que efetuaram nesse período.
+Funcionamento: A consulta envolve as tabelas usuario, endereco_usuario, emprestimo, devolucao e multa, com uso 
+de INNER JOIN e das funções WITH(), COUNT() e GROUP BY para a obtenção dos valores totais e 4 condições em 
+cláusula WHERE.*/
+
+WITH du AS 
+    (SELECT u.codigo_usuario, COUNT(u.codigo_usuario)
+    FROM emprestimo em
+    JOIN usuario u ON u.codigo_usuario = em.codigo_usuario
+    JOIN devolucao d ON d.codigo_emprestimo = em.codigo_emprestimo
+    JOIN endereco_usuario eu ON eu.codigo_usuario = u.codigo_usuario
+    LEFT JOIN multa m ON m.codigo_emprestimo = em.codigo_emprestimo
+    WHERE eu.codigo_endereco_usuario = 1
+    AND eu.cidade = 'Toledo'
+    AND DATE_PART('month', d.data_devolucao) = 01
+    AND m.codigo_multa IS NULL
+    GROUP BY (u.codigo_usuario))
+SELECT u.nome, du.count AS devolucoes
+FROM usuario u
+JOIN du ON du.codigo_usuario = u.codigo_usuario;
+
+
+/*10) Encontrar o nome do autor cadastrado que possui a maior quantidade de livros publicados entre os 
+anos 2000 e 2005 disponíveis no sistema.
+Funcionamento: A consulta envolve as tabelas autor, livro e categoria, com uso de INNER JOIN e das funções 
+WITH(), COUNT(), GROUP BY e MAX() para a obtenção dos valores totais e maior valor, além de 3 em clausula WHERE.*/
+
+WITH lp AS
+    (SELECT a.codigo_autor, COUNT(a.codigo_autor)
+    FROM livro l
+    JOIN autor a ON a.codigo_autor = l.codigo_autor
+    JOIN categoria c ON c.codigo_categoria = l.codigo_categoria
+    WHERE DATE_PART('year', l.data_publicacao) >= 2000
+    AND DATE_PART('year', l.data_publicacao) <= 2005
+    GROUP BY(a.codigo_autor))
+
+SELECT a.nome, lp.count
+FROM autor a
+JOIN lp ON lp.codigo_autor = a.codigo_autor
+WHERE lp.count IN
+    (SELECT MAX(count) FROM lp);

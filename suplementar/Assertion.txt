@@ -1,0 +1,17 @@
+DO $$
+DECLARE
+    atraso_count integer;
+BEGIN
+    SELECT COUNT(*) INTO atraso_count 
+        FROM ((SELECT e.codigo_usuario
+                    FROM biblioteca.emprestimo e
+                    FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                    WHERE e.data_emprestimo = CURRENT_DATE)
+                INTERSECT
+                (SELECT e.codigo_usuario
+                    FROM biblioteca.emprestimo e
+                    FULL JOIN biblioteca.devolucao d ON d.codigo_emprestimo = e.codigo_emprestimo
+                    WHERE e.data_final < CURRENT_DATE
+                    AND d.data_devolucao is NULL)) AS foo;
+    assert atraso_count = 0, 'Atraso pendente identificado.';
+end$$
